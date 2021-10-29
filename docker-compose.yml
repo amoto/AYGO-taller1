@@ -1,0 +1,70 @@
+version: '2'
+
+
+services:
+  db:
+    image: mongo:3.6.1
+    container_name: db
+    volumes:
+      - mongodb:/data/db
+      - mongodb_config:/data/configdb
+    environment:
+      - MONGO_INITDB_DATABASE=logs
+    ports:
+      - 27017:27017
+    command: mongod
+  web1:
+    image: juliandevia/aygotaller1logservice:latest
+    container_name: web1
+    environment:
+      - PORT=6000
+      - MONGO_URI=mongodb://db:27017
+    ports:
+      - "8087:6000"
+    depends_on:
+      - db
+  web2:
+    image: juliandevia/aygotaller1logservice:latest
+    container_name: web2
+    environment:
+      - PORT=6000
+      - MONGO_URI=mongodb://db:27017
+    ports:
+      - "8088:6000"
+    depends_on:
+      - db
+  web3:
+    image: juliandevia/aygotaller1logservice:latest
+    container_name: web3
+    environment:
+      - PORT=6000
+      - MONGO_URI=mongodb://db:27017
+    ports:
+      - "8089:6000"
+    depends_on:
+      - db
+  balancer:
+    image: juliandevia/aygotaller1balancer:latest
+    container_name: balancer
+    environment:
+      - PORT=6000
+      - SERVER_POOL=http://web1:6000;http://web2:6000;http://web3:6000
+    ports:
+      - "8090:6000"
+    depends_on:
+      - web1
+      - web2
+      - web3
+  front:
+    image: juliandevia/aygotaller1front:latest
+    container_name: front
+    environment:
+      - BALANCER_HOST=http://balancer:6000
+    ports:
+      - "80:3000"
+    depends_on:
+      - balancer
+
+volumes:
+  mongodb:
+  mongodb_config:
